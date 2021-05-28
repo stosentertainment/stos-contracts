@@ -6,18 +6,13 @@ import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v3.4.0/contr
 import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v3.4.0/contracts/token/ERC20/SafeERC20.sol";
 import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v3.4.0/contracts/utils/ReentrancyGuard.sol";
 
-
-
 import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v3.4.0/contracts/utils/Pausable.sol";
 import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v3.4.0/contracts/access/Ownable.sol";
 import "./IStakingReward.sol";
-  
 
-contract StakingRewards is
-    ReentrancyGuard,
-    Pausable,
-    Ownable
-{
+// /0xd9145CCE52D386f254917e481eB44e9943F39138
+
+contract StakingRewards is ReentrancyGuard, Pausable, Ownable {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
@@ -30,59 +25,52 @@ contract StakingRewards is
     event RewardsDurationUpdated(uint256 newDuration);
     event Recovered(address token, uint256 amount);
 
-
     /* ========== STATE VARIABLES ========== */
 
     IERC20 public rewardsToken;
     IERC20 public stakingToken;
 
     uint256 public rewardPerTokenStored;
-    uint256 public rewardableBlocks = 0 ;
+    uint256 public rewardableBlocks = 0;
     uint256 public poolStartingBlock = 0;
     uint256 public poolEndingBlock = 0;
+    bool public poolStarted = false;
 
     mapping(address => uint256) public userRewardPerBlockPaid;
     mapping(address => uint256) public rewards;
 
     uint256 public _totalSupply = 0;
     uint256 public _totalRewardSupply = 0;
-    
+
     mapping(address => uint256) private _balances;
-    mapping(address => uint256) public stakedAt;  // blockNumber when user staked his token.
-    
-    
-    
+    mapping(address => uint256) public stakedAt; // blockNumber when user staked his token.
 
     /* ========== MODIFIERS ========== */
 
     modifier updateReward(address account) {
         rewardPerTokenStored = rewardPerToken();
-      //  lastUpdateTime = lastTimeRewardApplicable();
+        //  lastUpdateTime = lastTimeRewardApplicable();
         if (account != address(0)) {
             rewards[account] = earned(account);
-           // userRewardPerTokenPaid[account] = rewardPerTokenStored;
+            // userRewardPerTokenPaid[account] = rewardPerTokenStored;
         }
         _;
     }
 
-
     /* ========== CONSTRUCTOR ========== */
 
-    constructor(
-        address _rewardsToken,
-        address _stakingToken
-    ) public Ownable()  {
+    constructor(address _rewardsToken, address _stakingToken) public Ownable() {
         rewardsToken = IERC20(_rewardsToken);
         stakingToken = IERC20(_stakingToken);
     }
 
     /* ========== VIEWS ========== */
 
-    function totalSupply() external  view returns (uint256) {
+    function totalSupply() external view returns (uint256) {
         return _totalSupply.div(1e18);
     }
 
-    function balanceOf(address account) external  view returns (uint256) {
+    function balanceOf(address account) external view returns (uint256) {
         return _balances[account];
     }
 
@@ -90,9 +78,7 @@ contract StakingRewards is
     //     return Math.min(block.timestamp, periodFinish);
     // }
 
-
     function rewardPerBlock() public view returns (uint256) {
-        
         return (_totalRewardSupply.div(rewardableBlocks));
     }
 
@@ -100,33 +86,33 @@ contract StakingRewards is
         if (_totalSupply == 0) {
             return rewardPerTokenStored;
         }
-       
-       uint256 rpb = rewardPerBlock().mul(1e18);
-       return (rpb.div(_totalSupply));
-    
+
+        uint256 rpb = rewardPerBlock().mul(1e18);
+        return (rpb.div(_totalSupply));
     }
-    
-    function totalStakedBlock(address account) public view returns (uint256){
+
+    function totalStakedBlock(address account) public view returns (uint256) {
         return (block.number.sub(stakedAt[account]));
     }
 
     function earned(address account) public view returns (uint256) {
         uint256 totalBlockStaked;
-        
-        if(stakedAt[account] == 0){
+
+        if (stakedAt[account] == 0) {
             return 0;
         }
-        
-        if(block.number > poolEndingBlock){
-           totalBlockStaked = stakedAt[account].sub(poolEndingBlock);  
+
+        if (block.number > poolEndingBlock) {
+            totalBlockStaked = stakedAt[account].sub(poolEndingBlock);
         }
         // totalBlockStaked = stakedAt[account].sub(block.number - 1 );
         totalBlockStaked = block.number.sub(stakedAt[account]);
-        
-        return (_balances[account]
-        .div(1e18)
-        .mul(rewardPerToken())
-        .mul(totalBlockStaked));
+
+        return (
+            _balances[account].div(1e18).mul(rewardPerToken()).mul(
+                totalBlockStaked
+            )
+        );
     }
 
     // function getRewardForDuration() external view returns (uint256) {
@@ -141,8 +127,9 @@ contract StakingRewards is
         whenNotPaused
         updateReward(msg.sender)
     {
-         require(_totalRewardSupply != 0 , "pool not started yet");
+        require(_totalRewardSupply != 0, "pool not started yet");
         require(_amount > 0, "Cannot stake 0");
+        require(block.number < poolEndingBlock, "Pool already expired");
         _totalSupply = _totalSupply.add(_amount);
         _balances[msg.sender] = _balances[msg.sender].add(_amount);
         stakedAt[msg.sender] = block.number;
@@ -181,33 +168,38 @@ contract StakingRewards is
 
     /* ========== RESTRICTED FUNCTIONS ========== */
 
-    function startPool(uint256 _reward,uint256 _poolExpiryTime)
+    function startPool(uint256 _reward, uint256 _poolExpiryTime)
         external
         onlyOwner
     {
-        
         uint256 balance = rewardsToken.balanceOf(address(this));
-   
-        require(_reward <= balance,"contract doesnt have enough reward token balance");
+
+        require(
+            _reward <= balance,
+            "contract doesnt have enough reward token balance"
+        );
         _totalRewardSupply = _reward;
-        poolStartingBlock= block.number;
+        poolStartingBlock = block.number;
         rewardableBlocks = rewardableBlocksAfterTimepoint(_poolExpiryTime);
         poolEndingBlock = block.number + rewardableBlocks;
+        poolStarted = true;
 
-   
         emit RewardAdded(_reward);
     }
 
- 
-    
-    function rewardableBlocksAfterTimepoint (uint timepoint) public view
-    returns (uint) {
+    function rewardableBlocksAfterTimepoint(uint256 timepoint)
+        public
+        view
+        returns (uint256)
+    {
         // returns the first block number after timepoint
-        require(timepoint > block.timestamp,"timepoint smaller than current timestamp");
+        require(
+            timepoint > block.timestamp,
+            "timepoint smaller than current timestamp"
+        );
         uint256 timeDiff = timepoint - block.timestamp;
-        uint256 b = ( timeDiff)/(1 seconds);
-        
-        return b;
-}
+        uint256 b = (timeDiff) / (1 seconds);
 
+        return b;
+    }
 }
