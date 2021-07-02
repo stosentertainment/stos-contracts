@@ -3,12 +3,12 @@
 pragma solidity 0.7.0;
 pragma experimental ABIEncoderV2;
 
+import "./IndexKeyGenerator.sol";
 import "./LotteryNFT.sol";
 import "./LotteryOwnable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
-import "@openzeppelin/contracts/proxy/Initializable.sol";
 
 // import "@nomiclabs/buidler/console.sol";
 
@@ -243,9 +243,8 @@ contract Lottery is LotteryOwnable {
         totalAmount = totalAmount.add(_price);
         lastTimestamp = block.timestamp;
 
-
-            uint64[keyLengthForEachBuy] memory userNumberIndex
-         = generateNumberIndexKey(_numbers);
+        uint64[keyLengthForEachBuy] memory userNumberIndex = IndexKeyGenerator
+            .generateNumberIndexKey(_numbers);
         for (uint256 i = 0; i < keyLengthForEachBuy; i++) {
             userBuyAmountSum[issueIndex][userNumberIndex[i]] = userBuyAmountSum[issueIndex][userNumberIndex[i]]
                 .add(_price);
@@ -287,7 +286,7 @@ contract Lottery is LotteryOwnable {
 
 
                 uint64[keyLengthForEachBuy] memory numberIndexKey
-             = generateNumberIndexKey(_numbers[i]);
+             = IndexKeyGenerator.generateNumberIndexKey(_numbers[i]);
             for (uint256 k = 0; k < keyLengthForEachBuy; k++) {
                 userBuyAmountSum[issueIndex][numberIndexKey[k]] = userBuyAmountSum[issueIndex][numberIndexKey[k]]
                     .add(_price);
@@ -328,167 +327,13 @@ contract Lottery is LotteryOwnable {
         emit MultiClaim(msg.sender, totalReward);
     }
 
-    function generateNumberIndexKey(uint8[4] memory number)
-        public
-        pure
-        returns (uint64[keyLengthForEachBuy] memory)
-    {
-        uint64[4] memory tempNumber;
-        tempNumber[0] = uint64(number[0]);
-        tempNumber[1] = uint64(number[1]);
-        tempNumber[2] = uint64(number[2]);
-        tempNumber[3] = uint64(number[3]);
-
-        uint64[keyLengthForEachBuy] memory result;
-        result[0] =
-            tempNumber[0] *
-            256 *
-            256 *
-            256 *
-            256 *
-            256 *
-            256 +
-            1 *
-            256 *
-            256 *
-            256 *
-            256 *
-            256 +
-            tempNumber[1] *
-            256 *
-            256 *
-            256 *
-            256 +
-            2 *
-            256 *
-            256 *
-            256 +
-            tempNumber[2] *
-            256 *
-            256 +
-            3 *
-            256 +
-            tempNumber[3];
-
-        result[1] =
-            tempNumber[0] *
-            256 *
-            256 *
-            256 *
-            256 +
-            1 *
-            256 *
-            256 *
-            256 +
-            tempNumber[1] *
-            256 *
-            256 +
-            2 *
-            256 +
-            tempNumber[2];
-        result[2] =
-            tempNumber[0] *
-            256 *
-            256 *
-            256 *
-            256 +
-            1 *
-            256 *
-            256 *
-            256 +
-            tempNumber[1] *
-            256 *
-            256 +
-            3 *
-            256 +
-            tempNumber[3];
-        result[3] =
-            tempNumber[0] *
-            256 *
-            256 *
-            256 *
-            256 +
-            2 *
-            256 *
-            256 *
-            256 +
-            tempNumber[2] *
-            256 *
-            256 +
-            3 *
-            256 +
-            tempNumber[3];
-        result[4] =
-            1 *
-            256 *
-            256 *
-            256 *
-            256 *
-            256 +
-            tempNumber[1] *
-            256 *
-            256 *
-            256 *
-            256 +
-            2 *
-            256 *
-            256 *
-            256 +
-            tempNumber[2] *
-            256 *
-            256 +
-            3 *
-            256 +
-            tempNumber[3];
-
-        result[5] = tempNumber[0] * 256 * 256 + 1 * 256 + tempNumber[1];
-        result[6] = tempNumber[0] * 256 * 256 + 2 * 256 + tempNumber[2];
-        result[7] = tempNumber[0] * 256 * 256 + 3 * 256 + tempNumber[3];
-        result[8] =
-            1 *
-            256 *
-            256 *
-            256 +
-            tempNumber[1] *
-            256 *
-            256 +
-            2 *
-            256 +
-            tempNumber[2];
-        result[9] =
-            1 *
-            256 *
-            256 *
-            256 +
-            tempNumber[1] *
-            256 *
-            256 +
-            3 *
-            256 +
-            tempNumber[3];
-        result[10] =
-            2 *
-            256 *
-            256 *
-            256 +
-            tempNumber[2] *
-            256 *
-            256 +
-            3 *
-            256 +
-            tempNumber[3];
-
-        return result;
-    }
-
     function calculateMatchingRewardAmount()
         internal
         view
         returns (uint256[4] memory)
     {
-
-            uint64[keyLengthForEachBuy] memory numberIndexKey
-         = generateNumberIndexKey(winningNumbers);
+        uint64[keyLengthForEachBuy] memory numberIndexKey = IndexKeyGenerator
+            .generateNumberIndexKey(winningNumbers);
 
         uint256 totalAmout1 = userBuyAmountSum[issueIndex][numberIndexKey[0]];
 

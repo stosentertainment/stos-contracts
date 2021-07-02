@@ -74,6 +74,7 @@ module.exports = {
         });
       },
       gas: 60000000,
+      gasPrice: 5000000000,
       network_id: 56,
     },
     // Another network with more advanced options...
@@ -117,7 +118,7 @@ module.exports = {
         // See the solidity docs for advice about optimization and evmVersion
         optimizer: {
           enabled: true,
-          runs: 2000,
+          runs: 9999,
         },
         evmVersion: 'byzantium',
       },
