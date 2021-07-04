@@ -1,6 +1,6 @@
 //SPDX-License-Identifier: UNLICENSED
 
-pragma solidity 0.7.0;
+pragma solidity 0.6.12;
 
 library IndexKeyGenerator {
     uint8 constant keyLengthForEachBuy = 11;

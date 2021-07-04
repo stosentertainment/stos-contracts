@@ -1,6 +1,6 @@
 //SPDX-License-Identifier: UNLICENSED
 
-pragma solidity 0.7.0;
+pragma solidity 0.6.12;
 
 contract LotteryOwnable {
     address private _owner;
@@ -13,7 +13,7 @@ contract LotteryOwnable {
     /**
      * @dev Initializes the contract setting the deployer as the initial owner.
      */
-    constructor()  {}
+    constructor() public {}
 
     function initOwner(address owner) internal {
         _owner = owner;

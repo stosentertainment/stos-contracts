@@ -1,7 +1,6 @@
 //SPDX-License-Identifier: UNLICENSED
 
-pragma solidity 0.7.0;
-pragma experimental ABIEncoderV2;
+pragma solidity 0.6.12;
 
 import "./IndexKeyGenerator.sol";
 import "./LotteryNFT.sol";
@@ -9,8 +8,6 @@ import "./LotteryOwnable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
-
-// import "@nomiclabs/buidler/console.sol";
 
 // 4 numbers
 contract Lottery is LotteryOwnable {
